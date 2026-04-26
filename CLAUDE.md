@@ -66,7 +66,7 @@ src/myapp/
 ### What Each Folder Does (Brief)
 
 - **`api/`** — FastAPI routers. Parse, validate, delegate to a usecase. No LLM logic here.
-- **`adapters/`** — One class per external service (S3, Postgres, Redis, vector DB). Singleton instances.
+- **`adapters/`** — One folder or file per external service (S3, Postgres, Redis, vector DB). Singleton instances. Simple adapters (single file): `adapters/<service>_adapter.py`. Adapters with supporting modules (ORM models, query helpers): `adapters/<service>/` folder containing `<service>_adapter.py` plus the helpers.
 - **`agents/workflows/`** — LangGraph `StateGraph` definitions. Just nodes + edges, no logic.
 - **`agents/state/`** — Two Pydantic classes per workflow: `XxxInputState` (API-facing) + `XxxState` (full).
 - **`agents/chains/`** — Each LangGraph node lives in its own file. Takes state, returns partial dict.
@@ -116,6 +116,13 @@ Don't create empty folders. Start small, split when you grow:
 - Never `os.getenv` outside `config.py`
 - Secrets typed as `SecretStr`
 - Keep `.env.example` up to date
+
+### Database indexes
+- Add an index ONLY when a query that runs frequently scans the column. UNIQUE constraints (which create implicit indexes) are functional and always allowed.
+- Do NOT add indexes proactively for `/list-X` endpoints, low-cardinality enum filters on small tables, or "we might filter by this someday" columns.
+- Prefer one wider composite index over multiple narrow indexes when queries always filter by the same prefix.
+- Partial indexes are appropriate ONLY when (a) the predicate matches a real recurring query and (b) the predicate eliminates a large fraction of rows. Otherwise the planner won't use them.
+- When adding an index, drop a comment in the model citing the query that justifies it.
 
 ### Testing
 - AAA pattern (Arrange-Act-Assert)

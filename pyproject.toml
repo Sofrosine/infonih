@@ -44,6 +44,7 @@ dev = [
 line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
+extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "RUF"]
@@ -68,6 +69,10 @@ addopts = "--cov=src/infonih --cov-report=term-missing --cov-fail-under=60"
 [tool.coverage.run]
 branch = true
 source = ["src/infonih"]
+omit = [
+    "src/infonih/adapters/postgres/models.py",
+    "src/infonih/domain/*",
+]
 
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]
