@@ -25,34 +25,35 @@ This document covers all of them.
 **User steps:**
 
 1. User clones the repo
-2. User copies `.env.example` to `.env` and fills in: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `DATABASE_URL`
-3. User edits `config.yaml` to specify their sources, interests, and digest schedule
-4. User runs `docker compose up -d` to start Postgres
-5. User runs database migrations
+2. User copies `.env.example` to `.env` and fills in: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `DATABASE_URL`, plus app-level constants (digest time, score threshold, max items per category)
+3. User runs `docker compose up -d` to start Postgres
+4. User runs database migrations
+5. User seeds initial sources and interests by running `uv run python -m infonih.scripts.seed` (reads from `seeds/sources.yaml` and `seeds/interests.md` if present, otherwise no-ops and waits for Telegram-driven setup)
 6. User runs the application
-7. User waits for the next scheduled digest, or triggers a manual digest to verify setup
+7. User adds or refines sources and interests over time via Telegram commands — no further file edits or restarts required
+8. User waits for the next scheduled digest, or triggers a manual digest to verify setup
 
 **System behavior:**
 
-- On startup, application validates `.env` and `config.yaml` against Pydantic schemas
-- If config is invalid, application exits with a clear error message identifying the specific problem (missing field, wrong type, invalid URL, etc.)
-- If config is valid, application initializes the scheduler and registers each source for polling
+- On startup, application validates `.env` against the Pydantic `Settings` schema
+- If env is invalid, application exits with a clear error message identifying the specific problem (missing field, wrong type, invalid URL, etc.)
+- If env is valid, application connects to Postgres, loads all enabled sources from the `sources` table, and registers each with the scheduler for polling
 - Application logs each registered source with its polling interval and category
-- Application sends a startup message to the configured Telegram chat: "infonih started. Watching N sources. Next digest at HH:MM."
+- Application sends a startup message to the configured Telegram chat: "infonih started. Watching N sources. Next digest at HH:MM." If N is 0, the message instead reads: "infonih started. No sources configured yet — send /add-source <url> to add one."
 
 **Success looks like:**
 
 - User receives the startup message in Telegram
-- Logs show all sources successfully registered
-- First poll cycle begins on schedule
+- Logs show all sources successfully loaded from the database and registered
+- First poll cycle begins on schedule (or the bot is ready to accept `/add-source` commands if the database is empty)
 
 **Failure modes and handling:**
 
 - **Missing required env var:** application exits with a message naming the missing variable and pointing to `.env.example`
-- **Invalid config.yaml syntax:** application exits with the YAML parser error and the line number
 - **Telegram bot token invalid:** application starts but startup message fails; user sees the error in logs and can fix the token
 - **Database unreachable:** application retries 3 times with backoff, then exits with a clear connection error
-- **At least one source URL is invalid:** application starts anyway, logs a warning for the bad source, marks it disabled in memory; other sources continue to work
+- **A source row in the database has an invalid URL:** application starts anyway, logs a warning naming the bad source, marks it disabled in the database; other sources continue to work
+- **Seed script fails partway:** insertions are wrapped in a single transaction, so the database is left untouched; the user fixes the seed file and re-runs
 
 ### Flow: Adding a new source
 
@@ -60,30 +61,38 @@ This document covers all of them.
 
 **User steps:**
 
-1. User edits `config.yaml`
-2. User adds a new entry to the `sources` list with name, type, URL, category, weight, and poll interval
-3. User saves the file
-4. User restarts the application (`docker compose restart` or equivalent)
+1. User sends a Telegram message to the bot: `/add-source <url> <category> [weight] [poll_interval_minutes]`
+   - Example: `/add-source https://simonwillison.net/atom/everything/ ai_engineering 1.5 60`
+   - `weight` defaults to 1.0 and `poll_interval_minutes` defaults to 60 if omitted
+2. User waits for the bot's confirmation reply
 
 **System behavior:**
 
-- On restart, the application re-validates the config
-- New sources are registered with the scheduler alongside existing ones
-- On the new source's first poll, articles published in the last 7 days are fetched and ingested as "backfill" — stored in the database but not eligible for the next digest
+- Bot parses the command and validates the URL shape
+- Application performs a one-shot probe fetch against the URL to confirm it returns a parseable feed; on success, it derives a default `name` from the feed's `<title>` (user can rename later via `/rename-source`)
+- Application inserts a new row into the `sources` table with `enabled = true`, `created_at = now()`
+- Scheduler picks up the new source on its next tick (no restart required); the source's first poll runs within `poll_interval_minutes` minutes, or sooner if the user sends `/poll-now <name>`
+- On the new source's first poll, articles published in the last 7 days are fetched and ingested as "backfill" — stored in the database with `is_backfill = true` and not eligible for the next digest
 - Articles published after the source was added are eligible for the digest normally
+- Bot replies: "Added source '<name>' (<category>, weight <weight>, every <N> min). First poll scheduled."
 - Application logs the new source registration
 
 **Success looks like:**
 
+- User receives the bot's confirmation reply within a few seconds
 - The next polling cycle for the new source successfully fetches articles
 - Subsequent digests include articles from the new source where their score and category cap allow
 - No flood of historical articles dominates the next digest
 
 **Failure modes and handling:**
 
-- **New source URL is unreachable:** logged as warning, source marked disabled, other sources unaffected
-- **New source returns malformed feed:** specific parse error logged, source disabled, user sees it on next startup
-- **New source duplicates URLs from existing sources:** dedup at insert time prevents double-storage; the new source's name is appended to the existing article's `sources` array
+- **Malformed command:** bot replies with the correct usage and an example
+- **URL is unreachable during the probe fetch:** bot replies with the specific HTTP error; no row is inserted
+- **URL returns content that is not a parseable feed:** bot replies "That URL didn't return a recognizable RSS or Atom feed"; no row is inserted
+- **URL already exists in the `sources` table:** bot replies with the existing source's name and current settings; no duplicate row is inserted
+- **Category is not one of the configured categories:** bot replies with the list of valid categories
+- **Database insert fails:** bot replies with a generic error; specific error logged for the operator
+- **New source duplicates article URLs from existing sources:** dedup at insert time prevents double-storage; the new source's name is appended to the existing article's `sources` array
 
 ### Flow: Removing or pausing a source
 
@@ -91,25 +100,28 @@ This document covers all of them.
 
 **User steps:**
 
-1. User edits `config.yaml`
-2. User either deletes the source entry or sets `enabled: false`
-3. User restarts the application
+1. User sends a Telegram message to the bot: `/pause-source <name>` to temporarily stop polling, or `/remove-source <name>` to permanently delete the source row
+2. User waits for the bot's confirmation reply
 
 **System behavior:**
 
-- On restart, the source is no longer registered with the scheduler
-- Existing articles from that source remain in the database (history is preserved)
-- Articles from that source can still appear in the database for retrospective queries; they simply stop being added to digests because no new ones arrive
+- Bot resolves `<name>` against the `sources` table (case-insensitive, supports unique-prefix matching)
+- For `/pause-source`: application sets `enabled = false` and `updated_at = now()` on the source row; scheduler unregisters the source within one tick
+- For `/remove-source`: application deletes the source row entirely; scheduler unregisters within one tick
+- In both cases, existing articles previously ingested from that source remain in the database (history is preserved); they simply stop accumulating because no new ones arrive
+- Bot replies: "Paused source '<name>'." or "Removed source '<name>'. <N> articles from this source remain in the database."
 
 **Success looks like:**
 
-- No new articles from the disabled source appear in subsequent digests
+- No new articles from the paused/removed source appear in subsequent digests
 - Existing data is preserved
-- User can re-enable the source later by setting `enabled: true` and restarting
+- User can re-enable a paused source later via `/resume-source <name>`; a removed source must be re-added with `/add-source`
 
 **Failure modes and handling:**
 
-- None significant. This flow is intentionally simple.
+- **Name does not match any source:** bot replies with the closest matches and the full list via `/list-sources`
+- **Name matches multiple sources by prefix:** bot replies asking the user to disambiguate
+- **`/resume-source` on a name that was never paused:** bot replies "Source is already active"; no-op
 
 ### Flow: Updating interest description
 
@@ -117,24 +129,27 @@ This document covers all of them.
 
 **User steps:**
 
-1. User edits the `interests` field in `config.yaml`
-2. User restarts the application
+1. User sends a Telegram message to the bot: `/set-interests` followed by the new interest description as a multi-line message (or as the body of a reply to the bot's `/show-interests` output)
+2. User waits for the bot's confirmation reply
 
 **System behavior:**
 
-- Future article scoring uses the new interests description
-- Articles already scored under the old description are not re-scored
-- The next digest uses the new interests for any articles being scored fresh
+- Bot validates the description (non-empty; warns if >2000 chars)
+- Application upserts the interest description into the `user_settings` table (single-row per-user; multi-tenant later via `user_id`), with a `version` counter incremented on each change and `updated_at = now()`
+- Future article scoring uses the new interests description starting with the next scoring cycle
+- Articles already scored under the old description are not re-scored; their `scored_with_interest_version` field preserves which version was used (for auditability)
+- Bot replies: "Interests updated (version <N>). Will apply to scoring from now on."
 
 **Success looks like:**
 
 - New digests reflect the updated interests
-- Historical scores are unchanged (auditable)
+- Historical scores are unchanged and remain attributable to the prior version
 
 **Failure modes and handling:**
 
-- **Interests description is empty:** application exits with a clear "interests is required" error on restart
-- **Interests description is extremely long (>2000 chars):** application warns but proceeds; user is alerted that long descriptions may degrade Claude's scoring quality
+- **Empty body after `/set-interests`:** bot replies with usage and the current interest description for reference
+- **Description >2000 chars:** bot accepts the change but warns "Long descriptions may degrade Claude's scoring quality. Consider tightening to under 2000 chars."
+- **Database write fails:** bot replies with a generic error; no version increment happens; specific error logged for the operator
 
 ---
 
@@ -390,8 +405,8 @@ Every Claude and OpenAI call is logged with model, input tokens, output tokens, 
 
 ### Database persistence
 
-All state — articles, scores, reactions, digests sent, source health — lives in Postgres. The system can be restarted at any time without losing context. Configuration in `config.yaml` is read at startup; runtime state is in the database.
+All state — articles, scores, reactions, digests sent, source health, sources themselves, and user settings (interests, schedule overrides) — lives in Postgres. The system can be restarted at any time without losing context. Only credentials and app-level constants are read from `.env` at startup; everything the user can mutate at runtime is in the database.
 
 ### Secrets and config
 
-API keys live in `.env`, sources and interests in `config.yaml`. These are separate concerns: `.env` contains credentials (private, not in version control), `config.yaml` contains preferences (semi-private, may be shared in obfuscated form for blog posts or open-source examples).
+`.env` contains credentials and app-level constants that don't change at runtime: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `DATABASE_URL`, plus operational constants like default digest time, score threshold, and per-category caps. The database holds everything the user mutates via Telegram: sources, interest description, source health, and reaction history. Optional `seeds/sources.yaml` and `seeds/interests.md` files exist only as one-time bootstrap fixtures for fresh deployments and forks; they are not consulted after initial seeding.

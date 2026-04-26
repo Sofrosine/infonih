@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: infonih-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: infonih
+      POSTGRES_PASSWORD: infonih
+      POSTGRES_DB: infonih
+    ports:
+      - "5432:5432"
+    volumes:
+      - infonih-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U infonih -d infonih"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  infonih-pgdata:
