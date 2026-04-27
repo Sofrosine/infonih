@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 
 from infonih.adapters.postgres.models import ArticleModel
 from infonih.adapters.postgres.postgres_adapter import PostgresAdapter
@@ -119,6 +119,88 @@ class PostgresArticleRepository:
         async with self._adapter.session() as session:
             result = await session.execute(stmt)
             return [_to_domain(m) for m in result.scalars()]
+
+    async def mark_scored(
+        self,
+        article_id: UUID,
+        *,
+        score: int,
+        reasoning: str,
+        interests_version: int,
+        low_content_confidence: bool = False,
+    ) -> None:
+        stmt = (
+            update(ArticleModel)
+            .where(ArticleModel.id == article_id)
+            .values(
+                status=ArticleStatus.SCORED,
+                score=score,
+                score_reasoning=reasoning,
+                scored_at=datetime.now(UTC),
+                scored_with_interest_version=interests_version,
+                low_content_confidence=low_content_confidence,
+                score_failure_reason=None,
+            )
+        )
+        async with self._adapter.session() as session:
+            await session.execute(stmt)
+
+    async def mark_score_failed(
+        self,
+        article_id: UUID,
+        *,
+        reason: str,
+    ) -> None:
+        stmt = (
+            update(ArticleModel)
+            .where(ArticleModel.id == article_id)
+            .values(
+                status=ArticleStatus.SCORE_FAILED,
+                score_failure_reason=reason,
+                scored_at=datetime.now(UTC),
+            )
+        )
+        async with self._adapter.session() as session:
+            await session.execute(stmt)
+
+    async def list_digest_candidates(
+        self,
+        *,
+        score_threshold: int,
+        published_after: datetime,
+        user_id: UUID | None = None,
+    ) -> list[Article]:
+        stmt = (
+            select(ArticleModel)
+            .where(
+                ArticleModel.user_id.is_(user_id),
+                ArticleModel.status == ArticleStatus.SCORED,
+                ArticleModel.score >= score_threshold,
+                ArticleModel.sent_in_digest_at.is_(None),
+                ArticleModel.published_at >= published_after,
+                ArticleModel.is_backfill.is_(False),
+            )
+            .order_by(ArticleModel.score.desc())
+        )
+        async with self._adapter.session() as session:
+            result = await session.execute(stmt)
+            return [_to_domain(m) for m in result.scalars()]
+
+    async def mark_sent_in_digest(
+        self,
+        article_ids: list[UUID],
+        *,
+        sent_at: datetime,
+    ) -> None:
+        if not article_ids:
+            return
+        stmt = (
+            update(ArticleModel)
+            .where(ArticleModel.id.in_(article_ids))
+            .values(sent_in_digest_at=sent_at)
+        )
+        async with self._adapter.session() as session:
+            await session.execute(stmt)
 
 
 def _to_domain(model: ArticleModel) -> Article:

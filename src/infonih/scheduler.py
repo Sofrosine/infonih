@@ -62,6 +62,13 @@ class IngestionScheduler:
         self._scheduler.shutdown(wait=False)
         logger.info("ingestion scheduler stopped")
 
+    @property
+    def aps(self) -> AsyncIOScheduler:
+        """Underlying APScheduler instance — exposed so the worker entrypoint
+        can register additional non-source jobs (scoring, digest) without a
+        second scheduler instance. Use sparingly."""
+        return self._scheduler
+
     async def reconcile(self) -> None:
         """Sync the scheduled job list with what the database currently says.
 

@@ -64,3 +64,44 @@ class ArticleRepository(Protocol):
         """Articles awaiting LLM scoring. Ordered by `published_at` DESC so
         newer articles get scored first."""
         ...
+
+    async def mark_scored(
+        self,
+        article_id: UUID,
+        *,
+        score: int,
+        reasoning: str,
+        interests_version: int,
+        low_content_confidence: bool = False,
+    ) -> None:
+        """Persist scoring outcome. Sets status='scored', stamps scored_at."""
+        ...
+
+    async def mark_score_failed(
+        self,
+        article_id: UUID,
+        *,
+        reason: str,
+    ) -> None:
+        """Persist scoring failure. Sets status='score_failed' for retry."""
+        ...
+
+    async def list_digest_candidates(
+        self,
+        *,
+        score_threshold: int,
+        published_after: datetime,
+        user_id: UUID | None = None,
+    ) -> list[Article]:
+        """Articles eligible for the next digest: scored, above threshold,
+        not yet sent, published in the window, not backfill."""
+        ...
+
+    async def mark_sent_in_digest(
+        self,
+        article_ids: list[UUID],
+        *,
+        sent_at: datetime,
+    ) -> None:
+        """Stamp articles as included in a digest so they don't re-appear."""
+        ...
