@@ -31,9 +31,29 @@ If you want a polished, zero-config consumer experience, look elsewhere — [Nos
 
 ## Screenshots
 
-| ![Daily digest](docs/img/daily_digest.png) | ![Source management](docs/img/source_management.png) | ![/list_sources output](docs/img/list_sources.png) |
-| :----------------------------------------: | :--------------------------------------------------: | :------------------------------------------------: |
-|              **Daily digest**              |          **Source management via Telegram**          |              **/list_sources output**              |
+### Daily digest
+
+The actual product — one Telegram message per day, ranked by Claude.
+
+<p align="center">
+  <img src="docs/img/daily_digest.png" alt="Daily digest in Telegram" width="420" />
+</p>
+
+### Source management via Telegram
+
+Add, pause, resume, or remove sources without editing config files.
+
+<p align="center">
+  <img src="docs/img/source_management.png" alt="Source management bot commands" width="420" />
+</p>
+
+### `/list_sources` output
+
+Quick check of what's currently being polled.
+
+<p align="center">
+  <img src="docs/img/list_sources.png" alt="/list_sources output" width="420" />
+</p>
 
 
 ---
