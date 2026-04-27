@@ -1,4 +1,4 @@
-<div align="center">
+
 
 # 📰 infonih
 
@@ -6,16 +6,16 @@
 
 *"info nih" — Indonesian for "got info for you."*
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Built with uv](https://img.shields.io/badge/built%20with-uv-de5ff7)](https://github.com/astral-sh/uv)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Personal use first](https://img.shields.io/badge/audience-personal%20use%20first-orange.svg)](#who-this-is-for)
+[Python 3.12+](https://www.python.org/downloads/)
+[Built with uv](https://github.com/astral-sh/uv)
+[License: MIT](LICENSE)
+[Personal use first](#who-this-is-for)
 
-<!-- HERO SCREENSHOT: replace with a real digest from your bot.
-     Suggested size: 800px wide. Place at docs/img/digest-hero.png -->
-<img src="docs/img/digest-hero.png" alt="infonih daily digest in Telegram" width="600" />
 
-</div>
+
+
+
+
 
 ---
 
@@ -39,24 +39,13 @@ If you want a polished, zero-config consumer experience, look elsewhere — [Nos
 
 ## Screenshots
 
-<!-- Replace each placeholder image with a real screenshot from your bot. -->
 
-<table>
-  <tr>
-    <td align="center" width="33%">
-      <img src="docs/img/digest-example.png" alt="A real daily digest" /><br/>
-      <sub><b>Daily digest at 07:00</b></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="docs/img/bot-commands.png" alt="Bot commands in action" /><br/>
-      <sub><b>Source management via Telegram</b></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="docs/img/list-sources.png" alt="/list_sources output" /><br/>
-      <sub><b>/list_sources output</b></sub>
-    </td>
-  </tr>
-</table>
+
+
+|                           |                                    |                          |
+| ------------------------- | ---------------------------------- | ------------------------ |
+| **Daily digest at 07:00** | **Source management via Telegram** | **/list_sources output** |
+
 
 ---
 
@@ -129,7 +118,6 @@ RSS feed ──poll──► insert (status=unscored, is_backfill=true|false)
 - ✅ **Daily digest** at your local time, capped at N items, with conservative AI-written 2-3 sentence summaries.
 - ✅ **Telegram-first management**: add, pause, resume, remove sources without editing config files.
 - ✅ **Failure-visible**: source poll errors stamp the row, scoring failures are retryable, low-signal days produce a "nothing met the threshold" message rather than silence.
-- ✅ **Self-hostable for ~$10–15/month** including LLM costs.
 - ✅ **Docker Compose deploy** in three commands.
 - 🚧 **Topic deduplication via embeddings** — schema is pgvector-ready; pipeline change deferred.
 - 🚧 **Reactions feedback loop** (👍/👎 refines scoring) — schema is hooked, pipeline not implemented yet.
@@ -178,22 +166,24 @@ Send `/start` to your bot in Telegram. It should reply.
 
 All configuration is in `.env`. Sensible defaults are baked into `src/infonih/config.py`; the only required values are the three secrets.
 
-| Variable | Required | Default | What it does |
-|---|---|---|---|
-| `ANTHROPIC_API_KEY` | ✅ | — | Used for scoring and digest summaries |
-| `TELEGRAM_BOT_TOKEN` | ✅ | — | From [@BotFather](https://t.me/BotFather) |
-| `TELEGRAM_CHAT_ID` | ✅ | — | Your private chat ID; ask [@userinfobot](https://t.me/userinfobot) |
-| `DATABASE_URL` | ✅ | localhost | `postgres:5432` host inside Docker Compose, `localhost:5432` for local dev |
-| `SCORE_MODEL` | | `claude-haiku-4-5` | Model used for per-article scoring (cost-sensitive) |
-| `SUMMARIZE_MODEL` | | `claude-haiku-4-5` | Model used to write digest summaries |
-| `SCORE_INTERVAL_MINUTES` | | `5` | How often the scorer runs |
-| `SCORE_BATCH_SIZE` | | `20` | Articles scored per tick |
-| `SCORE_THRESHOLD` | | `50` | Minimum score (0-100) for digest inclusion |
-| `DIGEST_MAX_ITEMS` | | `7` | Cap on digest length |
-| `DIGEST_WINDOW_HOURS` | | `24` | Article publish-time window for the digest |
-| `DIGEST_TIME_LOCAL` | | `07:00` | When the digest fires (HH:MM) |
-| `DIGEST_TIMEZONE` | | `Asia/Jakarta` | IANA timezone name |
-| `DEFAULT_POLL_INTERVAL_MINUTES` | | `60` | Default for new sources |
+
+| Variable                        | Required | Default            | What it does                                                               |
+| ------------------------------- | -------- | ------------------ | -------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`             | ✅        | —                  | Used for scoring and digest summaries                                      |
+| `TELEGRAM_BOT_TOKEN`            | ✅        | —                  | From [@BotFather](https://t.me/BotFather)                                  |
+| `TELEGRAM_CHAT_ID`              | ✅        | —                  | Your private chat ID; ask [@userinfobot](https://t.me/userinfobot)         |
+| `DATABASE_URL`                  | ✅        | localhost          | `postgres:5432` host inside Docker Compose, `localhost:5432` for local dev |
+| `SCORE_MODEL`                   |          | `claude-haiku-4-5` | Model used for per-article scoring (cost-sensitive)                        |
+| `SUMMARIZE_MODEL`               |          | `claude-haiku-4-5` | Model used to write digest summaries                                       |
+| `SCORE_INTERVAL_MINUTES`        |          | `5`                | How often the scorer runs                                                  |
+| `SCORE_BATCH_SIZE`              |          | `20`               | Articles scored per tick                                                   |
+| `SCORE_THRESHOLD`               |          | `50`               | Minimum score (0-100) for digest inclusion                                 |
+| `DIGEST_MAX_ITEMS`              |          | `7`                | Cap on digest length                                                       |
+| `DIGEST_WINDOW_HOURS`           |          | `24`               | Article publish-time window for the digest                                 |
+| `DIGEST_TIME_LOCAL`             |          | `07:00`            | When the digest fires (HH:MM)                                              |
+| `DIGEST_TIMEZONE`               |          | `Asia/Jakarta`     | IANA timezone name                                                         |
+| `DEFAULT_POLL_INTERVAL_MINUTES` |          | `60`               | Default for new sources                                                    |
+
 
 See `.env.example` for the full template.
 
@@ -201,22 +191,22 @@ See `.env.example` for the full template.
 
 ## Telegram bot commands
 
-| Command | What it does |
-|---|---|
-| `/start` | Welcome message |
-| `/list_sources` | Show all enabled sources with category, weight, poll interval |
+
+| Command                                                | What it does                                                                |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `/start`                                               | Welcome message                                                             |
+| `/list_sources`                                        | Show all enabled sources with category, weight, poll interval               |
 | `/add_source <url> <category> [weight] [poll_minutes]` | Add a new RSS source. Categories: `ai_engineering`, `ai_policy`, `politics` |
-| `/pause_source <name>` | Stop polling a source without deleting its history |
-| `/resume_source <name>` | Re-enable a paused source |
-| `/remove_source <name>` | Delete a source row (existing articles are preserved) |
-| `/set_interests <text>` | Update the interests description used for scoring |
-| `/show_interests` | Display the current interests + version |
+| `/pause_source <name>`                                 | Stop polling a source without deleting its history                          |
+| `/resume_source <name>`                                | Re-enable a paused source                                                   |
+| `/remove_source <name>`                                | Delete a source row (existing articles are preserved)                       |
+| `/set_interests <text>`                                | Update the interests description used for scoring                           |
+| `/show_interests`                                      | Display the current interests + version                                     |
+
 
 > **Tip:** configure the slash-command dropdown in @BotFather → `/setcommands` so users see autocomplete. The list to paste is in [docs/botfather-commands.txt](#) (or copy from the table above with `_` separators).
 
-<!-- BOT COMMAND SCREENSHOT: a short Telegram conversation showing
-     /add_source → bot reply → /list_sources → bot reply.
-     Place at docs/img/bot-commands.png -->
+
 
 ---
 
@@ -264,23 +254,7 @@ sudo ufw default deny incoming && sudo ufw default allow outgoing
 sudo ufw allow OpenSSH && sudo ufw enable
 ```
 
-For a longer treatment of operational concerns (logs, secrets rotation, disaster recovery), see [`FLOWS.md`](FLOWS.md).
-
----
-
-## Cost
-
-Approximate monthly cost for a single user with ~5 sources, ~100 articles ingested per day:
-
-| Item | Cost |
-|---|---|
-| VPS (Hetzner CX22 or equivalent) | ~$4 |
-| Anthropic API (Haiku 4.5, ~$0.002/article) | ~$5–10 |
-| Telegram | $0 |
-| Off-site backups (Backblaze B2) | <$1 |
-| **Total** | **~$10–15/month** |
-
-LLM cost scales with article volume, not the scoring tick interval — adding more sources is what moves the needle. See `.env` for cost knobs (`SCORE_THRESHOLD`, `SCORE_BATCH_SIZE`, `SCORE_INTERVAL_MINUTES`).
+For a longer treatment of operational concerns (logs, secrets rotation, disaster recovery), see `[FLOWS.md](FLOWS.md)`.
 
 ---
 
@@ -318,7 +292,7 @@ tests/                    # 71 tests, ~71% coverage
 
 Architecture style: **hexagonal**. The domain layer (Pydantic models + repository Protocols) has no I/O. Concrete repositories live under `adapters/postgres/` and implement the Protocols. Scripts and pipelines depend on the Protocols, not the implementations — so swapping storage or LLM providers is a contained change.
 
-For the full conventions, see [`CLAUDE.md`](CLAUDE.md).
+For the full conventions, see `[CLAUDE.md](CLAUDE.md)`.
 
 ---
 
@@ -345,7 +319,7 @@ The following are deliberately deferred per the [PRODUCT.md](PRODUCT.md) "Open p
 - **Reactions feedback loop**: 👍/👎 from the digest message refines the interest profile over time.
 - **Cost ceiling**: hard cap on daily LLM spend, with the digest pausing when the budget is exhausted.
 - **Source-health Telegram alerts**: notify after 3 consecutive poll failures.
-- **`/poll_now`, `/status`, `/digest_now`** Telegram commands.
+- `**/poll_now`, `/status`, `/digest_now`** Telegram commands.
 - **Hosted multi-user mode**: schema is `user_id`-ready (currently null in single-user mode); no infrastructure decided.
 
 PRs that align with these are welcome but not promised any review timeline.
@@ -356,10 +330,10 @@ PRs that align with these are welcome but not promised any review timeline.
 
 infonih is built to be forked. The bits most likely to need per-fork customisation:
 
-- **`seeds/sources.example.yaml`** — your fork's default starter sources. The real `seeds/sources.yaml` is gitignored so each user keeps their own private list.
-- **`seeds/interests.example.md`** — same idea for the interests text.
-- **`src/infonih/domain/category.py`** — categories are an enum; add or rename to match your fork's focus (e.g. tech vs business vs sports).
-- **`src/infonih/agents/prompts/templates/*.md`** — tune scoring strictness or summary tone here.
+- `**seeds/sources.example.yaml`** — your fork's default starter sources. The real `seeds/sources.yaml` is gitignored so each user keeps their own private list.
+- `**seeds/interests.example.md**` — same idea for the interests text.
+- `**src/infonih/domain/category.py**` — categories are an enum; add or rename to match your fork's focus (e.g. tech vs business vs sports).
+- `**src/infonih/agents/prompts/templates/*.md**` — tune scoring strictness or summary tone here.
 
 The hexagonal architecture means swapping out a piece (e.g. replacing the Anthropic adapter with a local model) is contained to its adapter file.
 
@@ -377,6 +351,4 @@ The hexagonal architecture means swapping out a piece (e.g. replacing the Anthro
 
 ---
 
-<div align="center">
-<sub>Built for one. Shared with anyone who finds it useful.</sub>
-</div>
+Built for one. Shared with anyone who finds it useful.
