@@ -26,3 +26,7 @@ htmlcov/
 
 # Claude per-user state
 .claude/agent-memory/
+
+# User-owned seed data (the example variants are committed)
+seeds/sources.yaml
+seeds/interests.md

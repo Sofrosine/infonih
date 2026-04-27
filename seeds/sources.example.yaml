@@ -1,0 +1,27 @@
+# Copy this file to `seeds/sources.yaml`, edit, then run:
+#     uv run python -m infonih.scripts.seed
+#
+# `seeds/sources.yaml` is gitignored — your source list is yours, not infonih's.
+# After the initial seed, manage sources via Telegram commands instead of editing this file.
+
+sources:
+  - name: Simon Willison
+    type: rss
+    url: https://simonwillison.net/atom/everything/
+    category: ai_engineering
+    weight: 1.5
+    poll_interval_minutes: 60
+
+  - name: Anthropic News
+    type: rss
+    url: https://www.anthropic.com/news/rss.xml
+    category: ai_engineering
+    weight: 1.5
+    poll_interval_minutes: 120
+
+  - name: BBC World
+    type: rss
+    url: https://feeds.bbci.co.uk/news/world/rss.xml
+    category: politics
+    weight: 0.8
+    poll_interval_minutes: 60
