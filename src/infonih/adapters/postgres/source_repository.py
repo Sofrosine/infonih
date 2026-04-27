@@ -64,6 +64,11 @@ class PostgresSourceRepository:
             model = result.scalar_one_or_none()
             return _to_domain(model) if model is not None else None
 
+    async def get_by_id(self, source_id: UUID) -> Source | None:
+        async with self._adapter.session() as session:
+            model = await session.get(SourceModel, source_id)
+            return _to_domain(model) if model is not None else None
+
     async def pause(self, source_id: UUID) -> None:
         await self._set_enabled(source_id, enabled=False)
 

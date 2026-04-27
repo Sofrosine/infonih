@@ -40,6 +40,10 @@ class SourceRepository(Protocol):
         """Case-insensitive exact-name lookup. Telegram /pause-source uses this."""
         ...
 
+    async def get_by_id(self, source_id: UUID) -> Source | None:
+        """Lookup by primary key. Scheduler refreshes source state per tick."""
+        ...
+
     async def pause(self, source_id: UUID) -> None:
         """Set enabled=false. No-op if already paused."""
         ...
