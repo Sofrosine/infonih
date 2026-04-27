@@ -15,8 +15,11 @@ class ArticleScoreSchema(BaseModel):
     )
     reasoning: str = Field(
         min_length=1,
-        max_length=500,
-        description="2-3 sentences explaining the score.",
+        max_length=1000,
+        description=(
+            "2-3 sentences (max ~500 characters) explaining the score. "
+            "Keep concise — this is logged for audit, not read in the digest."
+        ),
     )
     low_content_confidence: bool = Field(
         default=False,
