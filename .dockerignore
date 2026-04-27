@@ -1,0 +1,36 @@
+# Local virtualenv — the image builds its own with `uv sync`.
+.venv
+
+# VCS, IDE, OS clutter.
+.git
+.gitignore
+.github
+.vscode
+.idea
+.DS_Store
+
+# Test / lint / type-check caches.
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+.coverage.*
+htmlcov
+tests
+
+# Per-user data — must never end up in an image that other forks could run.
+.env
+.env.*
+seeds/sources.yaml
+seeds/interests.md
+
+# Claude Code state.
+.claude/agent-memory
+
+# Compiled / build artifacts.
+__pycache__
+*.py[oc]
+build
+dist
+wheels
+*.egg-info
