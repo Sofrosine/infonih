@@ -18,6 +18,13 @@ class Settings(BaseSettings):
         description="Async SQLAlchemy DSN. Use the +asyncpg driver.",
     )
 
+    test_database_url: SecretStr = Field(
+        default=SecretStr(
+            "postgresql+asyncpg://infonih:infonih@localhost:5432/infonih_test"
+        ),
+        description="DSN for the isolated test database. Created on first test run.",
+    )
+
     default_poll_interval_minutes: int = Field(default=60, ge=1)
 
 

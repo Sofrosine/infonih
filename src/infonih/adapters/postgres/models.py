@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import (
     ARRAY,
@@ -43,15 +43,25 @@ class SourceModel(Base):
 
     __tablename__ = "sources"
     __table_args__ = (
-        UniqueConstraint("user_id", "url", name="uq_sources_user_url"),
-        UniqueConstraint("user_id", "name", name="uq_sources_user_name"),
+        # NULLS NOT DISTINCT: single-user mode stores user_id=NULL on every row;
+        # without this, two NULLs would not collide and dedup would silently fail.
+        UniqueConstraint(
+            "user_id", "url", name="uq_sources_user_url", postgresql_nulls_not_distinct=True
+        ),
+        UniqueConstraint(
+            "user_id", "name", name="uq_sources_user_name", postgresql_nulls_not_distinct=True
+        ),
         CheckConstraint("weight >= 0.1 AND weight <= 10.0", name="ck_sources_weight_range"),
         CheckConstraint("poll_interval_minutes >= 1", name="ck_sources_poll_interval_min"),
         CheckConstraint("consecutive_failures >= 0", name="ck_sources_failures_nonneg"),
         Index("ix_sources_enabled_last_polled", "enabled", "last_polled_at"),
     )
 
-    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
     user_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     type: Mapped[SourceType] = mapped_column(
@@ -98,7 +108,12 @@ class ArticleModel(Base):
 
     __tablename__ = "articles"
     __table_args__ = (
-        UniqueConstraint("user_id", "url_normalized", name="uq_articles_user_url"),
+        UniqueConstraint(
+            "user_id",
+            "url_normalized",
+            name="uq_articles_user_url",
+            postgresql_nulls_not_distinct=True,
+        ),
         CheckConstraint(
             "score IS NULL OR (score BETWEEN 0 AND 100)",
             name="ck_articles_score_range",
@@ -106,7 +121,11 @@ class ArticleModel(Base):
         Index("ix_articles_status", "status"),
     )
 
-    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
     user_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     url_normalized: Mapped[str] = mapped_column(Text, nullable=False)
     url_original: Mapped[str] = mapped_column(Text, nullable=False)
@@ -160,7 +179,9 @@ class UserSettingsModel(Base):
 
     __tablename__ = "user_settings"
     __table_args__ = (
-        UniqueConstraint("user_id", name="uq_user_settings_user"),
+        UniqueConstraint(
+            "user_id", name="uq_user_settings_user", postgresql_nulls_not_distinct=True
+        ),
         CheckConstraint(
             "score_threshold BETWEEN 0 AND 100",
             name="ck_user_settings_score_threshold_range",
@@ -169,7 +190,11 @@ class UserSettingsModel(Base):
         CheckConstraint("interests_version >= 1", name="ck_user_settings_version_min"),
     )
 
-    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
     user_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     interests_text: Mapped[str] = mapped_column(Text, nullable=False)
     interests_version: Mapped[int] = mapped_column(
