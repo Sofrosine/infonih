@@ -22,8 +22,6 @@ from infonih.config import settings
 from infonih.domain.article import Article
 from infonih.domain.repositories.article_repository import ArticleRepository
 
-DIGEST_WINDOW_HOURS = 24
-
 
 class DigestResult(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -51,7 +49,7 @@ class BuildDailyDigestPipeline:
         now = datetime.now(UTC)
         candidates = await self._article_repo.list_digest_candidates(
             score_threshold=settings.score_threshold,
-            published_after=now - timedelta(hours=DIGEST_WINDOW_HOURS),
+            published_after=now - timedelta(hours=settings.digest_window_hours),
         )
 
         # Global cap; per-category and topic dedup deferred to v2.

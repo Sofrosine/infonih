@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # Digest
     digest_max_items: int = Field(default=7, ge=1)
     score_threshold: int = Field(default=50, ge=0, le=100)
+    digest_window_hours: int = Field(default=24, ge=1)
     digest_time_local: str = Field(default="07:00", pattern=r"^\d{2}:\d{2}$")
     digest_timezone: str = Field(default="Asia/Jakarta")
 
