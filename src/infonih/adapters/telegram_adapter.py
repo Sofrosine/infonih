@@ -74,14 +74,14 @@ class TelegramBot:
 
     async def cmd_start(self, update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(
-            "infonih bot ready. Try /list-sources, /add-source, /set-interests."
+            "infonih bot ready. Try /list_sources, /add_source, /set_interests."
         )
 
     async def cmd_list_sources(self, update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
         sources = await self._source_repo.list_enabled()
         if not sources:
             await update.message.reply_text(
-                "No sources yet. Use /add-source <url> <category> to add one."
+                "No sources yet. Use /add_source <url> <category> to add one."
             )
             return
         lines = [
@@ -95,7 +95,7 @@ class TelegramBot:
         args = ctx.args or []
         if len(args) < 2:
             await update.message.reply_text(
-                "Usage: /add-source <url> <category> [weight] [poll_minutes]\n"
+                "Usage: /add_source <url> <category> [weight] [poll_minutes]\n"
                 "Categories: " + ", ".join(c.value for c in Category)
             )
             return
@@ -127,7 +127,7 @@ class TelegramBot:
             return
         await update.message.reply_text(
             f"Added '{source.name}' ({category.value}, weight {weight}, every {poll_minutes}m). "
-            "First poll within the interval; use /poll-now to trigger immediately."
+            "First poll within the interval."
         )
 
     async def cmd_pause_source(self, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -138,7 +138,7 @@ class TelegramBot:
 
     async def cmd_remove_source(self, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         if not ctx.args:
-            await update.message.reply_text("Usage: /remove-source <name>")
+            await update.message.reply_text("Usage: /remove_source <name>")
             return
         name = " ".join(ctx.args)
         source = await self._source_repo.get_by_name(name)
@@ -152,7 +152,7 @@ class TelegramBot:
         text = " ".join(ctx.args).strip() if ctx.args else ""
         if not text:
             await update.message.reply_text(
-                "Usage: /set-interests <description>\n"
+                "Usage: /set_interests <description>\n"
                 "Send a few sentences describing what you want in your digest."
             )
             return
@@ -164,7 +164,7 @@ class TelegramBot:
     async def cmd_show_interests(self, update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
         s = await self._user_settings_repo.get()
         if s is None:
-            await update.message.reply_text("No interests set. Use /set-interests <text>.")
+            await update.message.reply_text("No interests set. Use /set_interests <text>.")
             return
         await update.message.reply_text(
             f"Interests (v{s.interests_version}):\n\n{s.interests_text}"
@@ -179,7 +179,8 @@ class TelegramBot:
         verb: str,
     ) -> None:
         if not ctx.args:
-            await update.message.reply_text(f"Usage: /{verb.replace('d', '')}-source <name>")
+            cmd = "resume_source" if enable else "pause_source"
+            await update.message.reply_text(f"Usage: /{cmd} <name>")
             return
         name = " ".join(ctx.args)
         source = await self._source_repo.get_by_name(name)
