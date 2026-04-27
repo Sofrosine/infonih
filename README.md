@@ -1,5 +1,3 @@
-
-
 # 📰 infonih
 
 **A personal AI news digest, delivered as a Telegram message every morning.**
@@ -10,12 +8,6 @@
 [Built with uv](https://github.com/astral-sh/uv)
 [License: MIT](LICENSE)
 [Personal use first](#who-this-is-for)
-
-
-
-
-
-
 
 ---
 
@@ -39,12 +31,9 @@ If you want a polished, zero-config consumer experience, look elsewhere — [Nos
 
 ## Screenshots
 
-
-
-
-|                           |                                    |                          |
-| ------------------------- | ---------------------------------- | ------------------------ |
-| **Daily digest at 07:00** | **Source management via Telegram** | **/list_sources output** |
+| ![Daily digest](docs/img/daily_digest.png) | ![Source management](docs/img/source_management.png) | ![/list_sources output](docs/img/list_sources.png) |
+| :----------------------------------------: | :--------------------------------------------------: | :------------------------------------------------: |
+|              **Daily digest**              |          **Source management via Telegram**          |              **/list_sources output**              |
 
 
 ---
@@ -206,8 +195,6 @@ See `.env.example` for the full template.
 
 > **Tip:** configure the slash-command dropdown in @BotFather → `/setcommands` so users see autocomplete. The list to paste is in [docs/botfather-commands.txt](#) (or copy from the table above with `_` separators).
 
-
-
 ---
 
 ## Deployment to a VPS
@@ -331,7 +318,7 @@ PRs that align with these are welcome but not promised any review timeline.
 infonih is built to be forked. The bits most likely to need per-fork customisation:
 
 - `**seeds/sources.example.yaml`** — your fork's default starter sources. The real `seeds/sources.yaml` is gitignored so each user keeps their own private list.
-- `**seeds/interests.example.md**` — same idea for the interests text.
+- `**seeds/interests.example.md`** — same idea for the interests text.
 - `**src/infonih/domain/category.py**` — categories are an enum; add or rename to match your fork's focus (e.g. tech vs business vs sports).
 - `**src/infonih/agents/prompts/templates/*.md**` — tune scoring strictness or summary tone here.
 
