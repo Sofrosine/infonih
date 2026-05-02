@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import (
     ARRAY,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -226,4 +227,39 @@ class UserSettingsModel(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+
+class CostEventModel(Base):
+    """Append-only audit log of LLM costs.
+
+    No FK on `article_id` so deleting articles never blocks cleanup; orphan
+    rows are valid (they record that we paid for an article that's now gone).
+    """
+
+    __tablename__ = "cost_events"
+    __table_args__ = (
+        # Daily / weekly / monthly summaries scan by created_at; the
+        # /cost command's hot path. (flow, created_at) gives free
+        # per-flow rollups using the same B-tree.
+        Index("ix_cost_events_flow_created_at", "flow", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
+    flow: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    model: Mapped[str] = mapped_column(String(64), nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    cache_creation_input_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    cache_read_input_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(10, 6), nullable=False)
+    article_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )

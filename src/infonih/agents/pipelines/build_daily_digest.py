@@ -86,6 +86,8 @@ class BuildDailyDigestPipeline:
                 user="Write the digest summary now.",
                 model=settings.summarize_model,
                 max_tokens=400,
+                flow="summarize_for_digest",
+                article_id=article.id,
             )
         except AnthropicError as exc:
             logger.warning("summary failed for {id}: {err}", id=article.id, err=exc)

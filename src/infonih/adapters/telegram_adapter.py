@@ -13,6 +13,7 @@ loop. They share an underlying `Bot` instance.
 """
 
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from loguru import logger
@@ -22,6 +23,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 from infonih.config import settings
 from infonih.domain.category import Category
+from infonih.domain.repositories.cost_repository import CostRepository
 from infonih.domain.repositories.source_repository import SourceRepository
 from infonih.domain.repositories.user_settings_repository import (
     UserSettingsRepository,
@@ -68,9 +70,11 @@ class TelegramBot:
         *,
         source_repo: SourceRepository,
         user_settings_repo: UserSettingsRepository,
+        cost_repo: CostRepository,
     ) -> None:
         self._source_repo = source_repo
         self._user_settings_repo = user_settings_repo
+        self._cost_repo = cost_repo
 
     async def cmd_start(self, update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(
@@ -170,6 +174,34 @@ class TelegramBot:
             f"Interests (v{s.interests_version}):\n\n{s.interests_text}"
         )
 
+    async def cmd_cost(self, update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
+        now = datetime.now(UTC)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        # ISO week: Monday is day 0
+        week_start = today_start - timedelta(days=now.weekday())
+        month_start = today_start.replace(day=1)
+
+        today = await self._cost_repo.summarize_since(since=today_start)
+        week = await self._cost_repo.summarize_since(since=week_start)
+        month = await self._cost_repo.summarize_since(since=month_start)
+        by_flow_today = await self._cost_repo.summarize_by_flow_since(since=today_start)
+
+        lines = [
+            "<b>💰 LLM costs</b>",
+            "",
+            f"Today: <b>${today.cost_usd:.4f}</b> ({today.call_count} calls)",
+            f"This week: ${week.cost_usd:.4f} ({week.call_count} calls)",
+            f"This month: ${month.cost_usd:.4f} ({month.call_count} calls)",
+        ]
+        if by_flow_today:
+            lines.append("")
+            lines.append("<b>Today by flow:</b>")
+            for s in by_flow_today:
+                lines.append(
+                    f"• <code>{s.flow}</code>: ${s.cost_usd:.4f} ({s.call_count})"
+                )
+        await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
+
     async def _toggle(
         self,
         update: Update,
@@ -212,4 +244,5 @@ class TelegramBot:
             "remove_source": self.cmd_remove_source,
             "set_interests": self.cmd_set_interests,
             "show_interests": self.cmd_show_interests,
+            "cost": self.cmd_cost,
         }

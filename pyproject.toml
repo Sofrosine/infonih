@@ -74,6 +74,10 @@ source = ["src/infonih"]
 omit = [
     "src/infonih/adapters/postgres/models.py",
     "src/infonih/domain/*",
+    # Thin SDK / IO wrappers — tested by mocking the adapter from the
+    # caller side rather than exercising the real Anthropic / Telegram APIs.
+    "src/infonih/adapters/anthropic_adapter.py",
+    "src/infonih/adapters/telegram_adapter.py",
 ]
 
 [tool.coverage.report]

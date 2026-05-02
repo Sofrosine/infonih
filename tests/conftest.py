@@ -88,7 +88,10 @@ async def test_adapter(test_engine) -> AsyncIterator[PostgresAdapter]:
 
     async with factory() as cleanup:
         await cleanup.execute(
-            text("TRUNCATE sources, articles, user_settings RESTART IDENTITY CASCADE")
+            text(
+                "TRUNCATE sources, articles, user_settings, cost_events "
+                "RESTART IDENTITY CASCADE"
+            )
         )
         await cleanup.commit()
 

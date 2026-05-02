@@ -67,6 +67,8 @@ class ScoreArticlesPipeline:
                     ),
                     user="Score this article and return the structured response.",
                     model=settings.score_model,
+                    flow="score_article",
+                    article_id=article.id,
                 )
                 await self._article_repo.mark_scored(
                     article.id,

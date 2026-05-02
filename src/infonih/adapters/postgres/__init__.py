@@ -1,8 +1,10 @@
 from infonih.adapters.postgres.article_repository import PostgresArticleRepository
+from infonih.adapters.postgres.cost_repository import PostgresCostRepository
 from infonih.adapters.postgres.postgres_adapter import postgres
 from infonih.adapters.postgres.source_repository import PostgresSourceRepository
 from infonih.adapters.postgres.user_settings_repository import PostgresUserSettingsRepository
 from infonih.domain.repositories.article_repository import ArticleRepository
+from infonih.domain.repositories.cost_repository import CostRepository
 from infonih.domain.repositories.source_repository import SourceRepository
 from infonih.domain.repositories.user_settings_repository import UserSettingsRepository
 
@@ -11,9 +13,11 @@ from infonih.domain.repositories.user_settings_repository import UserSettingsRep
 source_repository: SourceRepository = PostgresSourceRepository(postgres)
 article_repository: ArticleRepository = PostgresArticleRepository(postgres)
 user_settings_repository: UserSettingsRepository = PostgresUserSettingsRepository(postgres)
+cost_repository: CostRepository = PostgresCostRepository(postgres)
 
 __all__ = [
     "article_repository",
+    "cost_repository",
     "postgres",
     "source_repository",
     "user_settings_repository",

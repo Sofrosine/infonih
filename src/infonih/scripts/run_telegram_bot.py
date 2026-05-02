@@ -9,7 +9,11 @@ imports the other.
 
 from loguru import logger
 
-from infonih.adapters.postgres import source_repository, user_settings_repository
+from infonih.adapters.postgres import (
+    cost_repository,
+    source_repository,
+    user_settings_repository,
+)
 from infonih.adapters.telegram_adapter import TelegramBot
 
 
@@ -17,6 +21,7 @@ def main() -> None:
     bot = TelegramBot(
         source_repo=source_repository,
         user_settings_repo=user_settings_repository,
+        cost_repo=cost_repository,
     )
     app = bot.build_application()
     logger.info("telegram bot starting (long-poll)")
