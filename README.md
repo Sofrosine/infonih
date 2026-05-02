@@ -604,19 +604,63 @@ The test suite spins up an isolated `infonih_test` database alongside `infonih` 
 
 ---
 
-## Cost
+## Cost tracking
 
-Approximate monthly cost for a single user with ~5 sources, ~100 articles ingested per day:
+Every Anthropic call writes a row into the `cost_events` table — model, input/output tokens, computed USD, the flow it came from, and the article it was about (when applicable). No additional configuration; it just runs.
 
-| Item                                            | Cost           |
-| ----------------------------------------------- | -------------- |
-| VPS (Hetzner CX22 or equivalent)                | ~$4            |
-| Anthropic API (Haiku 4.5, ~$0.002/article)      | ~$5–10         |
-| Telegram                                        | $0             |
-| Off-site backups (Backblaze B2)                 | <$1            |
-| **Total**                                       | **~$10–15/mo** |
+### From Telegram
 
-LLM cost scales with article volume, not the scoring tick interval. The `/cost` Telegram command and the `cost_events` table give you per-flow visibility.
+Send `/cost` to your bot:
+
+<p align="center">
+  <img src="docs/img/cost_command.png" alt="/cost command output in Telegram" width="420" />
+</p>
+
+Example output:
+
+> 💰 **LLM costs**
+>
+> Today: **$0.0042** (12 calls)
+> This week: $0.0286 (78 calls)
+> This month: $0.0286 (78 calls)
+>
+> **Today by flow:**
+> • `score_article`: $0.0024 (10)
+> • `summarize_for_digest`: $0.0018 (2)
+
+### From psql (deeper queries)
+
+The Telegram view is a daily / weekly / monthly summary. For anything else — per-article cost, model split, cache hit rate when caching lands — query `cost_events` directly:
+
+```sql
+-- Spend per flow over the last 30 days
+SELECT flow,
+       count(*)             AS calls,
+       sum(input_tokens)    AS input_tokens,
+       sum(output_tokens)   AS output_tokens,
+       sum(cost_usd)        AS usd
+FROM cost_events
+WHERE created_at >= now() - interval '30 days'
+GROUP BY flow
+ORDER BY usd DESC;
+
+-- The 10 most expensive single calls this week
+SELECT created_at, flow, model, input_tokens, output_tokens, cost_usd, article_id
+FROM cost_events
+WHERE created_at >= now() - interval '7 days'
+ORDER BY cost_usd DESC
+LIMIT 10;
+
+-- Daily spend trend
+SELECT date_trunc('day', created_at) AS day, sum(cost_usd) AS usd, count(*) AS calls
+FROM cost_events
+GROUP BY day
+ORDER BY day DESC;
+```
+
+### How it works
+
+The cost columns are stamped on every successful `complete_structured` / `complete_text` call inside `AnthropicAdapter`. Recording is best-effort — if the audit-log write fails, the LLM call's result still returns to the caller (the LLM call already succeeded; an audit-log failure must not break it). Pricing per model lives in `src/infonih/agents/utils/llm/pricing.py` — update when Anthropic changes pricing.
 
 ---
 
