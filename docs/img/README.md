@@ -1,12 +1,12 @@
-# Screenshot placeholders
+# Documentation assets
 
-Drop screenshots here matching the filenames referenced from the root `README.md`:
+Images referenced from the root `README.md`.
 
-| File                     | Suggested content                                                       | Suggested size |
-|--------------------------|-------------------------------------------------------------------------|----------------|
-| `digest-hero.png`        | Hero shot of a real digest in your Telegram client. Eye-catching.       | 800 × 1200     |
-| `digest-example.png`     | Same digest or a different day, used in the screenshot grid.            | 600 × 900      |
-| `bot-commands.png`       | A short conversation showing `/add_source` → reply → `/list_sources`.   | 600 × 900      |
-| `list-sources.png`       | Output of `/list_sources` rendered in Telegram.                         | 600 × 900      |
+| File                     | Used in                                          | Status       |
+|--------------------------|--------------------------------------------------|--------------|
+| `daily_digest.png`       | Screenshots → "Daily digest"                     | ✅ added     |
+| `source_management.png`  | Screenshots → "Source management via Telegram"   | ✅ added     |
+| `list_sources.png`       | Screenshots → "/list_sources output"             | ✅ added     |
+| `cost_command.png`       | Cost tracking → `/cost` example output           | placeholder  |
 
-Tip: take screenshots on a phone (Telegram dark mode looks especially good) and crop tightly to the chat bubbles.
+Tip: take screenshots on a phone (Telegram dark mode looks especially good) and crop tightly to the chat bubbles. ~420px wide renders nicely in the README.
